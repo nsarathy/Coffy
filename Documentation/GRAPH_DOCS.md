@@ -311,10 +311,12 @@ Filter nodes by label and conditions. Supports `_logic` and comparison operators
 db.find_nodes(label="Person", name="Alice")
 
 # 2) OR
-db.find_nodes(label="Person", _logic="or", name="Alice", age={"gt": 35})
+# Find Persons who are either older than 30 OR named 'Alice'
+db.find_nodes(label="Person", _logic="or", age={"gt": 30}, name="Alice")
 
 # 3) NOT
-db.find_nodes(label="Person", _logic="not", age={"lt": 35})
+# Find Persons who are NOT under 25
+db.find_nodes(label="Person", _logic="not", age={"lt": 25})
 
 # 4) Range
 db.find_nodes(label="Person", age={"gte": 25, "lt": 35}, fields=["id", "name"])
