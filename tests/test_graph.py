@@ -1,11 +1,13 @@
 # coffy/graph/graph_tests.py
 # author: nsarathy
 
-from coffy.graph import GraphDB
 import json
 import os
+
 import tempfile
 import unittest
+
+from coffy.graph import GraphDB
 
 
 class TestGraphDB(unittest.TestCase):
@@ -113,6 +115,22 @@ class TestGraphDB(unittest.TestCase):
         results = self.db.find_nodes(_logic="not", age={"lt": 35})
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["name"], "Carol")
+
+    def test_find_nodes_doc_examples(self):
+        # OR example: older than 30 OR named 'Alice'
+        results_or = self.db.find_nodes(
+            label="Person", _logic="or", age={"gt": 30}, name="Alice"
+        )
+        names_or = {r["name"] for r in results_or}
+        self.assertIn("Alice", names_or)
+        self.assertIn("Carol", names_or)
+        self.assertNotIn("Bob", names_or)
+
+        # NOT example: NOT under 25
+        results_not = self.db.find_nodes(label="Person", _logic="not", age={"lt": 25})
+        self.assertEqual(
+            len(results_not), 3
+        )  # Since Alice (30), Bob (25), Carol (40) are all NOT < 25
 
     def test_find_by_label(self):
         results = self.db.find_by_label("Person")
