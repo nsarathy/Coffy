@@ -281,6 +281,52 @@ class TestORMModule(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["id"], 1)
 
+    def test_with_cte_orm_method(self):
+        # Use Query.with_cte() to filter older users via a CTE
+        res = (
+            self.User.objects.query()
+            .with_cte("older", "SELECT * FROM users WHERE age > ?", [25])
+            .select("id", "name")
+            .where([("id", "IN", [3, 5])])
+            .order_by("id ASC")
+            .all()
+            .as_list()
+        )
+        names = [r["name"] for r in res]
+        self.assertIn("Alice", names)
+        self.assertIn("Charlie", names)
+        self.assertNotIn("Neel", names)
+
+    def test_left_join(self):
+        # LEFT JOIN includes users with no posts (Bob, id=4, has no post)
+        res = (
+            self.User.objects.query()
+            .select("users.id", "users.name", "posts.title")
+            .join("posts", on="users.id = posts.user_id", kind="LEFT")
+            .order_by("users.id ASC")
+            .all()
+            .as_list()
+        )
+        ids_in_result = [r["id"] for r in res]
+        # Bob (id=4) appears in a LEFT JOIN even without a matching post
+        self.assertIn(4, ids_in_result)
+
+    def test_update_no_match_returns_zero(self):
+        n = self.User.objects.update([("id", "=", 9999)], city="Nowhere")
+        self.assertEqual(n, 0)
+
+    def test_delete_no_match_returns_zero(self):
+        n = self.User.objects.delete([("id", "=", 9999)])
+        self.assertEqual(n, 0)
+
+    def test_to_sqldict_utility(self):
+        from coffy.sql import to_sqldict
+
+        plain = [{"id": 1, "name": "X"}, {"id": 2, "name": "Y"}]
+        sd = to_sqldict(plain)
+        self.assertEqual(sd.as_list(), plain)
+        self.assertEqual(sd[0]["name"], "X")
+
 
 print("SQL ORM tests:")
 
